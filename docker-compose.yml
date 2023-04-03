@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  app:
+    container_name: chatgpt-web
+    image: chatgpt-web # 总是使用latest,更新时重新pull该tag镜像即可
+    ports:
+      - 3002:3002
+    environment:
+      # 二选一
+      # OPENAI_API_KEY: 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
+      # 二选一
+      OPENAI_ACCESS_TOKEN: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJob25naGgxMDA1QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS9hdXRoIjp7InVzZXJfaWQiOiJ1c2VyLWN1dmt4bExmbG1VbWRPV3B5bUFsemxyeSJ9LCJpc3MiOiJodHRwczovL2F1dGgwLm9wZW5haS5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTcxNDkyOTg0MzUxMjY2OTM3OTAiLCJhdWQiOlsiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MSIsImh0dHBzOi8vb3BlbmFpLm9wZW5haS5hdXRoMGFwcC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjc5NDQ4Nzk2LCJleHAiOjE2ODA2NTgzOTYsImF6cCI6IlRkSkljYmUxNldvVEh0Tjk1bnl5d2g1RTR5T282SXRHIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCBtb2RlbC5yZWFkIG1vZGVsLnJlcXVlc3Qgb3JnYW5pemF0aW9uLnJlYWQgb2ZmbGluZV9hY2Nlc3MifQ.y5giHlYSwQdAK6enEC1h85B3J3lZtlrE6NFL7xiCshRthfQrbFIytccKZswUT-HJhI89WnZUCILUM-zzuDYrrRKM-uHosmDgJC8jGP524JVKZw3UqjwUAicmDeZUAFZAy8Ttq9f0472gZlGtp45bKjHKRfcr7yo5qAk8DDcjStMqBP3CkgwNKJhp4sGgdSAO-KDAk0I6MZEbxrl-lo14vvK5Q14dJ7wr4CRcJbd675Y5yUj3Mv9j8h2CoapYbGNQDphfo1xLihrXTKvNb_T5-5c12RIqKS6pKkwggQtzctekHKEWfr5qwhMaRLTEY-EPK1HR33tU95_Gf8RVH_e8nQ
+      # API接口地址，可选，设置 OPENAI_API_KEY 时可用
+      OPENAI_API_BASE_URL: https://api.openai.com
+      # API模型，可选，设置 OPENAI_API_KEY 时可用，https://platform.openai.com/docs/models
+      # gpt-4, gpt-4-0314, gpt-4-32k, gpt-4-32k-0314, gpt-3.5-turbo, gpt-3.5-turbo-0301, text-davinci-003, text-davinci-002, code-davinci-002
+      OPENAI_API_MODEL: gpt-3.5-turbo
+      # 反向代理，可选
+      # API_REVERSE_PROXY: https://bypass.churchless.tech/api/conversation
+      # API_REVERSE_PROXY: https://api.pawan.krd/backend-api/conversation
+      API_REVERSE_PROXY: http://go-chatgpt-api:8080/conversation
+      # 访问权限密钥，可选
+      AUTH_SECRET_KEY: Init1234!
+      # 每小时最大请求次数，可选，默认无限
+      MAX_REQUEST_PER_HOUR: 1000
+      # 超时，单位毫秒，可选
+      TIMEOUT_MS: 60000
+      # Socks代理，可选，和 SOCKS_PROXY_PORT 一起时生效
+      SOCKS_PROXY_HOST:  
+      # Socks代理端口，可选，和 SOCKS_PROXY_HOST 一起时生效
+      SOCKS_PROXY_PORT: 
+      # HTTPS 代理，可选，支持 http，https，socks5
+      HTTPS_PROXY: 
+    depends_on:
+      - go-chatgpt-api
+
+  go-chatgpt-api:
+      container_name: go-chatgpt-api
+      image: linweiyuan/go-chatgpt-api
+      environment:
+        - GIN_MODE=release
+        - CHATGPT_PROXY_SERVER=http://chatgpt-proxy-server:9515
+        # - NETWORK_PROXY_SERVER=http://81.68.172.114:7890
+        - NETWORK_PROXY_SERVER=socks5://81.68.172.114:7891
+      depends_on:
+        - chatgpt-proxy-server
+      restart: unless-stopped
+
+  chatgpt-proxy-server:
+    container_name: chatgpt-proxy-server
+    image: linweiyuan/chatgpt-proxy-server
+    restart: unless-stopped     
